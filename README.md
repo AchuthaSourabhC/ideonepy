@@ -4,18 +4,18 @@ ideonepy
 1. Create an object of class 'ideone' with 
     username and password(not account API password ) 
 2. Use the object to call 'submit' method with
-    code of language to use given in ideone api
-    code to submit
-    input
-    run -true or false whether to run the code
-    private -true or false whether the code is private or public
-    
+    - code of language to use given in ideone api
+    - code to submit
+    - input
+    - run -true or false whether to run the code
+    - private -true or false whether the code is private or public
+3. Need to install SoapPy to use this 
+    - pip install soappy   
 
 Example usage 
 -------------
 
-  Python
-  
+<blockquote>  
   from ideonepy import ideone
 
 
@@ -29,6 +29,7 @@ Example usage
       return 0;
       }
   """
+</blockquote>
 
   obj = ideone('xxxx', 'xxxxxxx')
   items = obj.submit(1, source, 1, True, False)
