@@ -4,17 +4,17 @@ ideonepy
 1. Create an object of class 'ideone' with 
     username and password(not account password use API password ) 
 2. Use the object to call 'submit' method with
-    > code of language to use given in ideone api
-    > code to submit
-    > input
-    > run -true or false whether to run the code
-    > private -true or false whether the code is private or public
+  - code of language to use given in ideone api
+  - code to submit
+  - input
+  - run -true or false whether to run the code
+  - private -true or false whether the code is private or public
 3. Need to install SoapPy to use this -> pip install soappy   
-Methods available
-    >create_submission
-    >createDict
-    >languages
-    >submit
+4. Methods available
+  - create_submission
+  - createDict
+  - languages
+  - submit
 
 Example usage
 -------------
