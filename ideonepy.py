@@ -1,81 +1,87 @@
-from SOAPpy import WSDL
+from suds.client import Client
+from suds.xsd.doctor import ImportDoctor, Import
 import time
+import os
 
 
 class ideone(object):
-    def __init__(self, user, passwd):
-        self.url = 'http://ideone.com/api/1/service.wsdl'
+    def __init__(self, user, passwd,
+        url='http://ideone.com/api/1/service.wsdl'):
+        
+        self.url = url
 
         #contains data for submission
         self.data = {
-                        'user': user, 'pass': passwd, 'lang': 1,
-                        'code': '', 'input': 0, 'run': True, 'private': False
-                        }
-
+                    'user': user, 'pass': passwd, 'lang': 1,
+                    'code': '', 'input': 0, 'run': True, 'private': False
+                    }
+        self.c = Client(self.url, cache=None,
+            doctor=ImportDoctor(Import
+                ('http://schemas.xmlsoap.org/soap/encoding/')
+                    ))
         #contains what all status codes mean
         self.status = {
-                            0: 'Success', 1: 'Compiled',
-                            3: 'Running', 11: 'Compilation Error',
-                            12: 'Runtime Error', 13: 'Timelimit exceeded',
-                            15: 'Success', 17: 'memory limit exceeded',
-                            19: 'illegal system call', 20: 'internal error'
-                            }
+                        0: 'Success', 1: 'Compiled',
+                        3: 'Running', 11: 'Compilation Error',
+                        12: 'Runtime Error', 13: 'Timelimit exceeded',
+                        15: 'Success', 17: 'memory limit exceeded',
+                        19: 'illegal system call', 20: 'internal error'
+                        }
         self.error = {'status': 'error', 'output': 'Something went wrong :('}
+    
+    """Converts a list to String and returns it"""
+    def tostr(self, elm):
+        s = str(elm).strip('[]')
+        return s
 
-    """Creates a Dictionary from soappy response"""
-    def createDict(self, response):
-        #creating dict containing the result of the submission
-        res = {}
-        for item in response['item']:
-            res[item['key']] = item.value
-        return res
+    """Creates and returns a Dictionary from response"""
+    def createDict(self, output):
+        result = {}
+        for res in output.item:
+            result[self.tostr(res.key)] = self.tostr(res.value)
+        return result
 
     """ Dict of languages and their codes"""
     def languages(self):
-        wsdlObject = WSDL.Proxy(self.url)
-        langs = {}
-        resp = wsdlObject.getLanguages(self.data['user'], self.data['pass'])
-        for item in resp['item'][1]['value']['item']:
-            langs[item['key']] = item.value
-        return langs
+        cl = self.c.service.getLanguages('srb51', 'my1stIdeone')
+        result = {}
+        langlist = cl.item[1].value[0].item
+        for res in langlist:
+            key = str(res.key).strip('[]')
+            value = str(res.value).strip('[]')
+            result[value] = key
+        return result
 
-    def create_submission(self, lang=1, code='', inp=0,
-        run=True, private=False):
-        wsdlObject = WSDL.Proxy(self.url)
-        response = wsdlObject.createSubmission(self.data['user'],
-            self.data['pass'], code, lang,
-                 inp, run, private)
-        sub = self.createDict(response)
-        return sub
 
     """Create a submission, gets the submission status and details
          and returns a dict containing the result"""
     def submit(self, lang=1, code='', inp=0, run=True, private=False):
-
-        wsdlObject = WSDL.Proxy(self.url)
-
-        response = wsdlObject.createSubmission(self.data['user'],
+        #Submit and get link and error status
+        response = self.c.service.createSubmission(self.data['user'],
             self.data['pass'], code, lang,
                  inp, run, private)
-        link = response['item'][1]['value']
 
-        result = wsdlObject.getSubmissionStatus(self.data['user'],
-            self.data['pass'], link)
-        r = result['item'][1]
-        t = r.value
-
-        while t != 0:
-            time.sleep(3.0)
-            result = wsdlObject.getSubmissionStatus(self.data['user'],
+        link = self.tostr(response.item[1].value)
+        error = self.tostr(response.item[0].value)
+        
+        #check status of submission if no error
+        if error == 'OK':
+            sub = self.c.service.getSubmissionStatus(self.data['user'],
                 self.data['pass'], link)
-            r = result['item'][1]
-            t = r.value
-
-        output = wsdlObject.getSubmissionDetails(self.data['user'],
+            status = self.tostr(sub.item[1].value)
+            while status != '0':
+                time.sleep(2.0)
+                sub = self.c.service.getSubmissionStatus(self.data['user'],
+                    self.data['pass'], link)
+                status = self.tostr(sub.item[1].value)
+        
+        #Get the output for submission and return the dict
+        resDict = {}
+        output = self.c.service.getSubmissionDetails(self.data['user'],
             self.data['pass'], link, True,
                 True, True, True)
         reslink = 'http://ideone.com/' + link
 
-        res = self.createDict(output)
-        res['link'] = reslink
-        return res
+        resDict = self.createDict(output)
+        resDict['link'] = reslink #url of the result page
+        return resDict

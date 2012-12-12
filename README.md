@@ -9,9 +9,8 @@ ideonepy
   - input
   - run -true or false whether to run the code
   - private -true or false whether the code is private or public
-3. Need to install SoapPy to use this -> pip install soappy   
+3. Need to install s'uds' to use this   
 4. Methods available
-  - create_submission
   - createDict
   - languages
   - submit
